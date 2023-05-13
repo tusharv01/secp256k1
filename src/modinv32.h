@@ -30,6 +30,45 @@ typedef struct {
  *
  * On output, all of x's limbs will be in [0, 2^30).
  */
+typedef struct {
+    uint32_t m;             // Modulus
+    uint32_t minv8;         // Precomputed inverse of m % 8
+    uint32_t n;             // Range for modular inverse
+} secp256k1_modinv32_modinfo;
+
+int secp256k1_modinv32_modinfo_verify(const secp256k1_modinv32_modinfo* modinfo) {
+    // Verify that m is prime
+    if (!is_prime(modinfo->m)) {
+        return 1;  // Error code for non-prime modulus
+    }
+    
+    // Verify that minv8 is correct
+    if ((modinfo->m % 8) != 0 && modinfo->minv8 != modinv32(modinfo->m % 8)) {
+        return 2;  // Error code for incorrect minv8
+    }
+    
+    // Verify that n is in the correct range
+    if (modinfo->n < 2 || modinfo->n > modinfo->m) {
+        return 3;  // Error code for out-of-range n
+    }
+    
+    // No errors found
+    return 0;
+}
+
+int secp256k1_modinv32_do_something(const secp256k1_modinv32_modinfo* modinfo, ...) {
+    // Call secp256k1_modinv32_modinfo_verify on entry
+    int verify_result = secp256k1_modinv32_modinfo_verify(modinfo);
+    if (verify_result != 0) {
+        return verify_result;  // Pass along the error code
+    }
+    
+    // Do something with modinfo
+    ...
+    
+    return 0;  // Success
+}
+
 static void secp256k1_modinv32_var(secp256k1_modinv32_signed30 *x, const secp256k1_modinv32_modinfo *modinfo);
 
 /* Same as secp256k1_modinv32_var, but constant time in x (not in the modulus). */
